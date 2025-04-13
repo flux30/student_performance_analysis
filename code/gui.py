@@ -114,7 +114,7 @@ if 'page' not in st.session_state:
 @st.cache_data
 def load_and_preprocess_data():
     """Load and preprocess the dataset from hardcoded path"""
-    file_path = r"C:\Users\bijay\Documents\dsp_project_sem4\dataset\StudentsPerformance.csv"
+    file_path = r"C:\Users\bijay\Documents\dsp_project_sem4\StudentsPerformance.csv"
     try:
         df = pd.read_csv(file_path)
 
