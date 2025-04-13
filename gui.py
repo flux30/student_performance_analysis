@@ -11,6 +11,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+import os
 
 # Set page configuration for dark theme and wide layout
 st.set_page_config(
@@ -114,7 +115,7 @@ if 'page' not in st.session_state:
 @st.cache_data
 def load_and_preprocess_data():
     """Load and preprocess the dataset from hardcoded path"""
-    file_path = r"C:\Users\bijay\Documents\dsp_project_sem4\StudentsPerformance.csv"
+    file_path = os.path.join("dataset", "StudentsPerformance.csv")
     try:
         df = pd.read_csv(file_path)
 
