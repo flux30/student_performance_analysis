@@ -12,7 +12,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 
 # File path
-file_path = r"C:\Users\bijay\Documents\dsp_project_sem4\StudentsPerformance.csv"
+file_path = r"C:\Users\bijay\Documents\dsp_project_sem4\code\StudentsPerformance.csv"
 
 
 def load_and_preprocess_data():
