@@ -204,44 +204,72 @@ def build_and_evaluate_models(X_train, X_test, y_train, y_test):
     return models, results, predictions, y_test
 
 def plot_results(results, predictions, y_test):
-    """Generate regression plots with reduced size"""
-    st.subheader("RMSE Comparison")
-    rmses = [results[model]['RMSE'] for model in results]
+    """Generate regression plots with reduced size, updated to reflect correct metrics"""
+    # Set dark theme for plots
+    plt.style.use('dark_background')
+
+    # RMSE Comparison (Train and Test)
+    st.subheader("RMSE Comparison (Train vs Test)")
     models = list(results.keys())
+    train_rmses = [results[model]['Train_RMSE'] for model in results]
+    test_rmses = [results[model]['RMSE'] for model in results]
     fig, ax = plt.subplots(figsize=(5, 3))
-    sns.barplot(x=models, y=rmses, ax=ax, palette='Blues')
-    ax.set_title('RMSE Comparison Across Models', fontsize=10)
-    ax.set_ylabel('RMSE', fontsize=8)
-    ax.set_xlabel('', fontsize=8)
-    ax.tick_params(axis='both', labelsize=8)
-    ax.grid(True, linestyle='--', alpha=0.7)
-    plt.xticks(rotation=45)
+    x = np.arange(len(models))
+    width = 0.35
+    ax.bar(x - width/2, train_rmses, width, label='Train RMSE', color='#4CAF50')
+    ax.bar(x + width/2, test_rmses, width, label='Test RMSE', color='#2196F3')
+    ax.set_title('RMSE Comparison Across Models', fontsize=10, color='#E0E0E0')
+    ax.set_ylabel('RMSE', fontsize=8, color='#E0E0E0')
+    ax.set_xticks(x)
+    ax.set_xticklabels(models, fontsize=8, rotation=45, color='#E0E0E0')
+    ax.tick_params(axis='y', labelsize=8, colors='#E0E0E0')
+    ax.legend(fontsize=8, loc='upper right')
+    ax.grid(True, linestyle='--', alpha=0.3)
     st.pyplot(fig, use_container_width=False)
     plt.close()
 
+    # R² Comparison (Train and Test)
+    st.subheader("R² Score Comparison (Train vs Test)")
+    train_r2s = [results[model]['Train_R2'] for model in results]
+    test_r2s = [results[model]['R2'] for model in results]
+    fig, ax = plt.subplots(figsize=(5, 3))
+    ax.bar(x - width/2, train_r2s, width, label='Train R²', color='#4CAF50')
+    ax.bar(x + width/2, test_r2s, width, label='Test R²', color='#2196F3')
+    ax.set_title('R² Score Comparison Across Models', fontsize=10, color='#E0E0E0')
+    ax.set_ylabel('R² Score', fontsize=8, color='#E0E0E0')
+    ax.set_xticks(x)
+    ax.set_xticklabels(models, fontsize=8, rotation=45, color='#E0E0E0')
+    ax.tick_params(axis='y', labelsize=8, colors='#E0E0E0')
+    ax.legend(fontsize=8, loc='upper right')
+    ax.grid(True, linestyle='--', alpha=0.3)
+    st.pyplot(fig, use_container_width=False)
+    plt.close()
+
+    # Predicted vs Actual Scores
     for model_name, y_pred in predictions.items():
         st.subheader(f'Predicted vs Actual Scores ({model_name})')
         fig, ax = plt.subplots(figsize=(5, 3))
-        ax.scatter(y_test, y_pred, alpha=0.5, s=10)
+        ax.scatter(y_test, y_pred, alpha=0.5, s=10, color='#4CAF50')
         ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--', lw=1)
-        ax.set_xlabel('Actual Scores', fontsize=8)
-        ax.set_ylabel('Predicted Scores', fontsize=8)
-        ax.set_title(f'Predicted vs Actual Scores ({model_name})', fontsize=10)
-        ax.tick_params(axis='both', labelsize=8)
-        ax.grid(True, linestyle='--', alpha=0.7)
+        ax.set_xlabel('Actual Scores', fontsize=8, color='#E0E0E0')
+        ax.set_ylabel('Predicted Scores', fontsize=8, color='#E0E0E0')
+        ax.set_title(f'Predicted vs Actual Scores ({model_name})', fontsize=10, color='#E0E0E0')
+        ax.tick_params(axis='both', labelsize=8, colors='#E0E0E0')
+        ax.grid(True, linestyle='--', alpha=0.3)
         st.pyplot(fig, use_container_width=False)
         plt.close()
 
+        # Residual Plot
         st.subheader(f'Residual Plot ({model_name})')
         residuals = y_test - y_pred
         fig, ax = plt.subplots(figsize=(5, 3))
-        ax.scatter(y_pred, residuals, alpha=0.5, s=10)
+        ax.scatter(y_pred, residuals, alpha=0.5, s=10, color='#4CAF50')
         ax.axhline(y=0, color='r', linestyle='--', linewidth=1)
-        ax.set_xlabel('Predicted Scores', fontsize=8)
-        ax.set_ylabel('Residuals', fontsize=8)
-        ax.set_title(f'Residual Plot ({model_name})', fontsize=10)
-        ax.tick_params(axis='both', labelsize=8)
-        ax.grid(True, linestyle='--', alpha=0.7)
+        ax.set_xlabel('Predicted Scores', fontsize=8, color='#E0E0E0')
+        ax.set_ylabel('Residuals', fontsize=8, color='#E0E0E0')
+        ax.set_title(f'Residual Plot ({model_name})', fontsize=10, color='#E0E0E0')
+        ax.tick_params(axis='both', labelsize=8, colors='#E0E0E0')
+        ax.grid(True, linestyle='--', alpha=0.3)
         st.pyplot(fig, use_container_width=False)
         plt.close()
 
@@ -292,213 +320,221 @@ def analyze_factors(df):
     """Analyze and visualize factors affecting student performance"""
     st.subheader("Analyze Factors Affecting Performance")
 
+    # Set dark theme for plots
+    plt.style.use('dark_background')
+
     visualizations = {
-        "Bar Graph: Average Scores by Gender": "gender",
-        "Bar Graph: Average Scores by Ethnicity": "ethnicity",
-        "Bar Graph: Average Scores by Parental Education": "parental_education",
-        "Bar Graph: Average Scores by Lunch Type": "lunch",
-        "Bar Graph: Average Scores by Test Preparation": "test_prep",
-        "Line Graph: Subject Performance Over Average Scores": "subject_performance",
-        "Pie Chart: Pass Rate by Test Preparation": "pass_rate",
-        "Histogram: Distribution of Average Scores": "distribution",
-        "Show All Visualizations": "all",
-        "Performance Insights": "insights"
+        "Average Scores by Gender": "gender",
+        "Average Scores by Ethnicity": "ethnicity",
+        "Average Scores by Parental Education": "parental_education",
+        "Average Scores by Lunch Type": "lunch",
+        "Average Scores by Test Preparation": "test_prep",
+        "Subject Performance Over Average Scores": "subject_performance",
+        "Pass Rate by Test Preparation": "pass_rate",
+        "Distribution of Average Scores": "distribution",
+        "Performance Insights": "insights",
+        "Show All Visualizations": "all"
     }
 
     selected = st.multiselect(
         "Select Visualizations",
         options=list(visualizations.keys()),
-        default=["Bar Graph: Average Scores by Gender"]
+        default=["Average Scores by Gender"]
     )
 
+    # Handle "Show All Visualizations"
     if "Show All Visualizations" in selected:
-        selected = [key for key in visualizations.keys() if
-                    key not in ["Show All Visualizations", "Performance Insights"]]
+        selected = [key for key in visualizations.keys() if key != "Show All Visualizations"]
 
     for choice in selected:
         with st.container():
-            if choice == "Bar Graph: Average Scores by Gender":
-                st.subheader(choice)
-                fig, ax = plt.subplots(figsize=(5, 3))
-                sns.barplot(x='gender', y='average_score', data=df, errorbar=None, ax=ax, palette='Blues')
-                ax.set_title('Average Scores by Gender', fontsize=10)
-                ax.set_xlabel('Gender', fontsize=8)
-                ax.set_ylabel('Average Score', fontsize=8)
-                ax.tick_params(axis='both', labelsize=8)
-                ax.grid(True, linestyle='--', alpha=0.7)
-                st.pyplot(fig, use_container_width=False)
-                plt.close()
+            try:
+                if choice == "Average Scores by Gender":
+                    st.subheader(choice)
+                    fig, ax = plt.subplots(figsize=(5, 3))
+                    sns.barplot(x='gender', y='average_score', data=df, ax=ax, color='#4CAF50')
+                    ax.set_title('Average Scores by Gender', fontsize=10, color='#E0E0E0')
+                    ax.set_xlabel('Gender', fontsize=8, color='#E0E0E0')
+                    ax.set_ylabel('Average Score', fontsize=8, color='#E0E0E0')
+                    ax.tick_params(axis='both', labelsize=8, colors='#E0E0E0')
+                    ax.grid(True, linestyle='--', alpha=0.3)
+                    st.pyplot(fig, use_container_width=False)
+                    plt.close()
 
-            elif choice == "Bar Graph: Average Scores by Ethnicity":
-                st.subheader(choice)
-                fig, ax = plt.subplots(figsize=(5, 3))
-                sns.barplot(x='ethnicity', y='average_score', data=df, errorbar=None, ax=ax, palette='Blues')
-                ax.set_title('Average Scores by Ethnicity', fontsize=10)
-                ax.set_xlabel('Ethnicity', fontsize=8)
-                ax.set_ylabel('Average Score', fontsize=8)
-                ax.tick_params(axis='both', labelsize=8)
-                ax.grid(True, linestyle='--', alpha=0.7)
-                st.pyplot(fig, use_container_width=False)
-                plt.close()
+                elif choice == "Average Scores by Ethnicity":
+                    st.subheader(choice)
+                    fig, ax = plt.subplots(figsize=(5, 3))
+                    sns.barplot(x='ethnicity', y='average_score', data=df, ax=ax, color='#4CAF50')
+                    ax.set_title('Average Scores by Ethnicity', fontsize=10, color='#E0E0E0')
+                    ax.set_xlabel('Ethnicity', fontsize=8, color='#E0E0E0')
+                    ax.set_ylabel('Average Score', fontsize=8, color='#E0E0E0')
+                    ax.tick_params(axis='both', labelsize=8, colors='#E0E0E0')
+                    ax.grid(True, linestyle='--', alpha=0.3)
+                    plt.xticks(rotation=45)
+                    st.pyplot(fig, use_container_width=False)
+                    plt.close()
 
-            elif choice == "Bar Graph: Average Scores by Parental Education":
-                st.subheader(choice)
-                fig, ax = plt.subplots(figsize=(5, 3))
-                sns.barplot(x='parental_education', y='average_score', data=df, errorbar=None, ax=ax, palette='Blues')
-                ax.set_title('Average Scores by Parental Education', fontsize=10)
-                ax.set_xlabel('Parental Education', fontsize=8)
-                ax.set_ylabel('Average Score', fontsize=8)
-                ax.tick_params(axis='both', labelsize=8)
-                plt.xticks(rotation=45)
-                ax.grid(True, linestyle='--', alpha=0.7)
-                st.pyplot(fig, use_container_width=False)
-                plt.close()
+                elif choice == "Average Scores by Parental Education":
+                    st.subheader(choice)
+                    fig, ax = plt.subplots(figsize=(5, 3))
+                    sns.barplot(x='parental_education', y='average_score', data=df, ax=ax, color='#4CAF50')
+                    ax.set_title('Average Scores by Parental Education', fontsize=10, color='#E0E0E0')
+                    ax.set_xlabel('Parental Education', fontsize=8, color='#E0E0E0')
+                    ax.set_ylabel('Average Score', fontsize=8, color='#E0E0E0')
+                    ax.tick_params(axis='both', labelsize=8, colors='#E0E0E0')
+                    ax.grid(True, linestyle='--', alpha=0.3)
+                    plt.xticks(rotation=45)
+                    st.pyplot(fig, use_container_width=False)
+                    plt.close()
 
-            elif choice == "Bar Graph: Average Scores by Lunch Type":
-                st.subheader(choice)
-                fig, ax = plt.subplots(figsize=(5, 3))
-                sns.barplot(x='lunch', y='average_score', data=df, errorbar=None, ax=ax, palette='Blues')
-                ax.set_title('Average Scores by Lunch Type', fontsize=10)
-                ax.set_xlabel('Lunch Type', fontsize=8)
-                ax.set_ylabel('Average Score', fontsize=8)
-                ax.tick_params(axis='both', labelsize=8)
-                ax.grid(True, linestyle='--', alpha=0.7)
-                st.pyplot(fig, use_container_width=False)
-                plt.close()
+                elif choice == "Average Scores by Lunch Type":
+                    st.subheader(choice)
+                    fig, ax = plt.subplots(figsize=(5, 3))
+                    sns.barplot(x='lunch', y='average_score', data=df, ax=ax, color='#4CAF50')
+                    ax.set_title('Average Scores by Lunch Type', fontsize=10, color='#E0E0E0')
+                    ax.set_xlabel('Lunch Type', fontsize=8, color='#E0E0E0')
+                    ax.set_ylabel('Average Score', fontsize=8, color='#E0E0E0')
+                    ax.tick_params(axis='both', labelsize=8, colors='#E0E0E0')
+                    ax.grid(True, linestyle='--', alpha=0.3)
+                    st.pyplot(fig, use_container_width=False)
+                    plt.close()
 
-            elif choice == "Bar Graph: Average Scores by Test Preparation":
-                st.subheader(choice)
-                fig, ax = plt.subplots(figsize=(5, 3))
-                sns.barplot(x='test_prep', y='average_score', data=df, errorbar=None, ax=ax, palette='Blues')
-                ax.set_title('Average Scores by Test Preparation', fontsize=10)
-                ax.set_xlabel('Test Preparation', fontsize=8)
-                ax.set_ylabel('Average Score', fontsize=8)
-                ax.tick_params(axis='both', labelsize=8)
-                ax.grid(True, linestyle='--', alpha=0.7)
-                st.pyplot(fig, use_container_width=False)
-                plt.close()
+                elif choice == "Average Scores by Test Preparation":
+                    st.subheader(choice)
+                    fig, ax = plt.subplots(figsize=(5, 3))
+                    sns.barplot(x='test_prep', y='average_score', data=df, ax=ax, color='#4CAF50')
+                    ax.set_title('Average Scores by Test Preparation', fontsize=10, color='#E0E0E0')
+                    ax.set_xlabel('Test Preparation', fontsize=8, color='#E0E0E0')
+                    ax.set_ylabel('Average Score', fontsize=8, color='#E0E0E0')
+                    ax.tick_params(axis='both', labelsize=8, colors='#E0E0E0')
+                    ax.grid(True, linestyle='--', alpha=0.3)
+                    st.pyplot(fig, use_container_width=False)
+                    plt.close()
 
-            elif choice == "Line Graph: Subject Performance Over Average Scores":
-                st.subheader(choice)
-                fig, ax = plt.subplots(figsize=(5, 3))
-                subjects = ['math_score', 'reading_score', 'writing_score']
-                subject_names = ['Math', 'Reading', 'Writing']
-                for subject, name in zip(subjects, subject_names):
-                    sns.lineplot(x=df['average_score'], y=df[subject], label=name, ax=ax, linewidth=1)
-                ax.set_title('Subject Performance Over Average Scores', fontsize=10)
-                ax.set_xlabel('Average Score', fontsize=8)
-                ax.set_ylabel('Subject Score', fontsize=8)
-                ax.tick_params(axis='both', labelsize=8)
-                ax.legend(fontsize=8)
-                ax.grid(True, linestyle='--', alpha=0.7)
-                st.pyplot(fig, use_container_width=False)
-                plt.close()
+                elif choice == "Subject Performance Over Average Scores":
+                    st.subheader(choice)
+                    fig, ax = plt.subplots(figsize=(5, 3))
+                    subjects = ['math_score', 'reading_score', 'writing_score']
+                    subject_names = ['Math', 'Reading', 'Writing']
+                    for subject, name in zip(subjects, subject_names):
+                        sns.lineplot(x=df['average_score'], y=df[subject], label=name, ax=ax, linewidth=1)
+                    ax.set_title('Subject Performance Over Average Scores', fontsize=10, color='#E0E0E0')
+                    ax.set_xlabel('Average Score', fontsize=8, color='#E0E0E0')
+                    ax.set_ylabel('Subject Score', fontsize=8, color='#E0E0E0')
+                    ax.tick_params(axis='both', labelsize=8, colors='#E0E0E0')
+                    ax.legend(fontsize=8)
+                    ax.grid(True, linestyle='--', alpha=0.3)
+                    st.pyplot(fig, use_container_width=False)
+                    plt.close()
 
-            elif choice == "Pie Chart: Pass Rate by Test Preparation":
-                st.subheader(choice)
-                pass_rate = df.groupby('test_prep')['average_score'].apply(lambda x: (x >= 60).mean()) * 100
-                fig, ax = plt.subplots(figsize=(5, 3))
-                ax.pie(pass_rate, labels=pass_rate.index, autopct='%1.1f%%', startangle=90,
-                       colors=sns.color_palette('Blues'), textprops={'fontsize': 8})
-                ax.set_title('Pass Rate by Test Preparation', fontsize=10)
-                st.pyplot(fig, use_container_width=False)
-                plt.close()
+                elif choice == "Pass Rate by Test Preparation":
+                    st.subheader(choice)
+                    pass_rate = df.groupby('test_prep')['average_score'].apply(lambda x: (x >= 60).mean()) * 100
+                    fig, ax = plt.subplots(figsize=(5, 3))
+                    ax.pie(pass_rate, labels=pass_rate.index, autopct='%1.1f%%', startangle=90,
+                           colors=['#4CAF50', '#2196F3'], textprops={'fontsize': 8, 'color': '#E0E0E0'})
+                    ax.set_title('Pass Rate by Test Preparation', fontsize=10, color='#E0E0E0')
+                    st.pyplot(fig, use_container_width=False)
+                    plt.close()
 
-            elif choice == "Histogram: Distribution of Average Scores":
-                st.subheader(choice)
-                fig, ax = plt.subplots(figsize=(5, 3))
-                sns.histplot(df['average_score'], bins=12, kde=True, ax=ax, color='skyblue', linewidth=0.5)
-                ax.set_title('Distribution of Average Scores', fontsize=10)
-                ax.set_xlabel('Average Score', fontsize=8)
-                ax.set_ylabel('Number of Students', fontsize=8)
-                ax.tick_params(axis='both', labelsize=8)
-                ax.grid(True, linestyle='--', alpha=0.7)
-                ax.axvline(df['average_score'].mean(), color='red', linestyle='--',
-                           label=f'Mean: {df["average_score"].mean():.2f}', linewidth=1)
-                ax.legend(fontsize=8)
-                st.pyplot(fig, use_container_width=False)
-                plt.close()
+                elif choice == "Distribution of Average Scores":
+                    st.subheader(choice)
+                    fig, ax = plt.subplots(figsize=(5, 3))
+                    sns.histplot(df['average_score'], bins=12, kde=True, ax=ax, color='#4CAF50', linewidth=0.5)
+                    ax.set_title('Distribution of Average Scores', fontsize=10, color='#E0E0E0')
+                    ax.set_xlabel('Average Score', fontsize=8, color='#E0E0E0')
+                    ax.set_ylabel('Number of Students', fontsize=8, color='#E0E0E0')
+                    ax.tick_params(axis='both', labelsize=8, colors='#E0E0E0')
+                    ax.grid(True, linestyle='--', alpha=0.3)
+                    ax.axvline(df['average_score'].mean(), color='red', linestyle='--',
+                               label=f'Mean: {df["average_score"].mean():.2f}', linewidth=1)
+                    ax.legend(fontsize=8)
+                    st.pyplot(fig, use_container_width=False)
+                    plt.close()
 
-            elif choice == "Performance Insights":
-                st.subheader(choice)
-                gender_avg = df.groupby('gender')['average_score'].mean().to_dict()
-                ethnicity_avg = df.groupby('ethnicity')['average_score'].mean().to_dict()
-                education_avg = df.groupby('parental_education')['average_score'].mean().to_dict()
-                lunch_avg = df.groupby('lunch')['average_score'].mean().to_dict()
-                test_prep_avg = df.groupby('test_prep')['average_score'].mean().to_dict()
+                elif choice == "Performance Insights":
+                    st.subheader(choice)
+                    gender_avg = df.groupby('gender')['average_score'].mean().to_dict()
+                    ethnicity_avg = df.groupby('ethnicity')['average_score'].mean().to_dict()
+                    education_avg = df.groupby('parental_education')['average_score'].mean().to_dict()
+                    lunch_avg = df.groupby('lunch')['average_score'].mean().to_dict()
+                    test_prep_avg = df.groupby('test_prep')['average_score'].mean().to_dict()
 
-                highest_gender = max(gender_avg.items(), key=lambda x: x[1])
-                lowest_gender = min(gender_avg.items(), key=lambda x: x[1])
-                highest_ethnicity = max(ethnicity_avg.items(), key=lambda x: x[1])
-                lowest_ethnicity = min(ethnicity_avg.items(), key=lambda x: x[1])
-                highest_education = max(education_avg.items(), key=lambda x: x[1])
-                lowest_education = min(education_avg.items(), key=lambda x: x[1])
-                highest_lunch = max(lunch_avg.items(), key=lambda x: x[1])
-                lowest_lunch = min(lunch_avg.items(), key=lambda x: x[1])
-                highest_test_prep = max(test_prep_avg.items(), key=lambda x: x[1])
-                lowest_test_prep = min(test_prep_avg.items(), key=lambda x: x[1])
+                    highest_gender = max(gender_avg.items(), key=lambda x: x[1])
+                    lowest_gender = min(gender_avg.items(), key=lambda x: x[1])
+                    highest_ethnicity = max(ethnicity_avg.items(), key=lambda x: x[1])
+                    lowest_ethnicity = min(ethnicity_avg.items(), key=lambda x: x[1])
+                    highest_education = max(education_avg.items(), key=lambda x: x[1])
+                    lowest_education = min(education_avg.items(), key=lambda x: x[1])
+                    highest_lunch = max(lunch_avg.items(), key=lambda x: x[1])
+                    lowest_lunch = min(lunch_avg.items(), key=lambda x: x[1])
+                    highest_test_prep = max(test_prep_avg.items(), key=lambda x: x[1])
+                    lowest_test_prep = min(test_prep_avg.items(), key=lambda x: x[1])
 
-                df['passed'] = df['average_score'] >= 60
-                pass_rate_test_prep = df.groupby('test_prep')['passed'].mean() * 100
-                percentiles = np.percentile(df['average_score'], [25, 50, 75])
-                subject_avg = {
-                    'Math': df['math_score'].mean(),
-                    'Reading': df['reading_score'].mean(),
-                    'Writing': df['writing_score'].mean()
-                }
-                strongest_subject = max(subject_avg.items(), key=lambda x: x[1])
-                weakest_subject = min(subject_avg.items(), key=lambda x: x[1])
-                test_prep_improvement = test_prep_avg['completed'] - test_prep_avg['none']
+                    df['passed'] = df['average_score'] >= 60
+                    pass_rate_test_prep = df.groupby('test_prep')['passed'].mean() * 100
+                    percentiles = np.percentile(df['average_score'], [25, 50, 75])
+                    subject_avg = {
+                        'Math': df['math_score'].mean(),
+                        'Reading': df['reading_score'].mean(),
+                        'Writing': df['writing_score'].mean()
+                    }
+                    strongest_subject = max(subject_avg.items(), key=lambda x: x[1])
+                    weakest_subject = min(subject_avg.items(), key=lambda x: x[1])
+                    test_prep_improvement = test_prep_avg['completed'] - test_prep_avg['none']
 
-                st.markdown(f"""
-                <div class="card">
-                    <h4 style="color: #4CAF50; margin-bottom: 15px;">Key Performance Insights</h4>
+                    st.markdown(f"""
+                    <div class="card">
+                        <h4 style="color: #4CAF50; margin-bottom: 15px;">Key Performance Insights</h4>
 
-                    <div style="margin-bottom: 15px;">
-                        <h5 style="color: #4CAF50; margin-bottom: 5px;">1. Performance by Demographic Groups</h5>
-                        <ul style="margin-top: 0;">
-                            <li>Highest performing gender: <strong>{highest_gender[0]}</strong> (Average: {highest_gender[1]:.2f})</li>
-                            <li>Highest performing ethnicity: <strong>{highest_ethnicity[0]}</strong> (Average: {highest_ethnicity[1]:.2f})</li>
-                            <li>Highest performing parental education: <strong>{highest_education[0]}</strong> (Average: {highest_education[1]:.2f})</li>
-                        </ul>
+                        <div style="margin-bottom: 15px;">
+                            <h5 style="color: #4CAF50; margin-bottom: 5px;">1. Performance by Demographic Groups</h5>
+                            <ul style="margin-top: 0;">
+                                <li>Highest performing gender: <strong>{highest_gender[0]}</strong> (Average: {highest_gender[1]:.2f})</li>
+                                <li>Highest performing ethnicity: <strong>{highest_ethnicity[0]}</strong> (Average: {highest_ethnicity[1]:.2f})</li>
+                                <li>Highest performing parental education: <strong>{highest_education[0]}</strong> (Average: {highest_education[1]:.2f})</li>
+                            </ul>
+                        </div>
+
+                        <div style="margin-bottom: 15px;">
+                            <h5 style="color: #4CAF50; margin-bottom: 5px;">2. Critical Factors</h5>
+                            <ul style="margin-top: 0;">
+                                <li>Lunch type impact: Students with <strong>{highest_lunch[0]}</strong> lunch score {abs(highest_lunch[1] - lowest_lunch[1]):.2f} points higher</li>
+                                <li>Test prep impact: Students who <strong>{highest_test_prep[0]}</strong> score {abs(highest_test_prep[1] - lowest_test_prep[1]):.2f} points higher</li>
+                            </ul>
+                        </div>
+
+                        <div style="margin-bottom: 15px;">
+                            <h5 style="color: #4CAF50; margin-bottom: 5px;">3. Achievement Distribution</h5>
+                            <ul style="margin-top: 0;">
+                                <li>25% of students score below {percentiles[0]:.2f}</li>
+                                <li>50% of students score below {percentiles[1]:.2f} (median)</li>
+                                <li>75% of students score below {percentiles[2]:.2f}</li>
+                                <li>Overall average score: {df['average_score'].mean():.2f}</li>
+                            </ul>
+                        </div>
+
+                        <div style="margin-bottom: 15px;">
+                            <h5 style="color: #4CAF50; margin-bottom: 5px;">4. Subject Performance</h5>
+                            <ul style="margin-top: 0;">
+                                <li>Best subject: <strong>{strongest_subject[0]}</strong> (Average: {strongest_subject[1]:.2f})</li>
+                                <li>Weakest subject: <strong>{weakest_subject[0]}</strong> (Average: {weakest_subject[1]:.2f})</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h5 style="color: #4CAF50; margin-bottom: 5px;">5. Intervention Opportunities</h5>
+                            <ul style="margin-top: 0;">
+                                <li>Test prep improves scores by {test_prep_improvement:.2f} points</li>
+                                <li>Pass rate (completed test prep): {pass_rate_test_prep['completed']:.2f}%</li>
+                                <li>Pass rate (no test prep): {pass_rate_test_prep['none']:.2f}%</li>
+                            </ul>
+                        </div>
                     </div>
+                    """, unsafe_allow_html=True)
 
-                    <div style="margin-bottom: 15px;">
-                        <h5 style="color: #4CAF50; margin-bottom: 5px;">2. Critical Factors</h5>
-                        <ul style="margin-top: 0;">
-                            <li>Lunch type impact: Students with <strong>{highest_lunch[0]}</strong> lunch score {abs(highest_lunch[1] - lowest_lunch[1]):.2f} points higher</li>
-                            <li>Test prep impact: Students who <strong>{highest_test_prep[0]}</strong> score {abs(highest_test_prep[1] - lowest_test_prep[1]):.2f} points higher</li>
-                        </ul>
-                    </div>
-
-                    <div style="margin-bottom: 15px;">
-                        <h5 style="color: #4CAF50; margin-bottom: 5px;">3. Achievement Distribution</h5>
-                        <ul style="margin-top: 0;">
-                            <li>25% of students score below {percentiles[0]:.2f}</li>
-                            <li>50% of students score below {percentiles[1]:.2f} (median)</li>
-                            <li>75% of students score below {percentiles[2]:.2f}</li>
-                            <li>Overall average score: {df['average_score'].mean():.2f}</li>
-                        </ul>
-                    </div>
-
-                    <div style="margin-bottom: 15px;">
-                        <h5 style="color: #4CAF50; margin-bottom: 5px;">4. Subject Performance</h5>
-                        <ul style="margin-top: 0;">
-                            <li>Best subject: <strong>{strongest_subject[0]}</strong> (Average: {strongest_subject[1]:.2f})</li>
-                            <li>Weakest subject: <strong>{weakest_subject[0]}</strong> (Average: {weakest_subject[1]:.2f})</li>
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h5 style="color: #4CAF50; margin-bottom: 5px;">5. Intervention Opportunities</h5>
-                        <ul style="margin-top: 0;">
-                            <li>Test prep improves scores by {test_prep_improvement:.2f} points</li>
-                            <li>Pass rate (completed test prep): {pass_rate_test_prep['completed']:.2f}%</li>
-                            <li>Pass rate (no test prep): {pass_rate_test_prep['none']:.2f}%</li>
-                        </ul>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+            except Exception as e:
+                st.error(f"Error rendering visualization '{choice}': {e}")
 
 def home_page():
     """Home page content"""
@@ -591,7 +627,7 @@ def main():
             plot_results(results, predictions, y_test)
 
     with tab3:
-        predict_performance(df, models['Random Forest'])
+        predict_performance(df, models['Linear Regression'])
 
     with tab4:
         analyze_factors(df)
