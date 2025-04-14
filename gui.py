@@ -11,7 +11,6 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
-import os
 
 # Set page configuration for dark theme and wide layout
 st.set_page_config(
@@ -65,7 +64,6 @@ st.markdown("""
         border: 1px solid #4A4A4A;
     }
 
-    /* Navigation tabs styling */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
     }
@@ -87,7 +85,6 @@ st.markdown("""
         color: white !important;
     }
 
-    /* Card styling */
     .card {
         background-color: #2A2A2A;
         border-radius: 10px;
@@ -96,12 +93,10 @@ st.markdown("""
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
 
-    /* Make graphs smaller */
     .stPlot {
         max-width: 400px !important;
     }
 
-    /* Hide Streamlit menu and footer */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     </style>
@@ -110,7 +105,6 @@ st.markdown("""
 # Initialize session state for page navigation
 if 'page' not in st.session_state:
     st.session_state.page = "Home"
-
 
 @st.cache_data
 def load_and_preprocess_data():
@@ -155,7 +149,6 @@ def load_and_preprocess_data():
         st.error(f"Error loading data: {e}")
         return None, None, None, None, None
 
-
 @st.cache_resource
 def build_and_evaluate_models(X_train, X_test, y_train, y_test):
     """Build and evaluate regression models"""
@@ -171,18 +164,22 @@ def build_and_evaluate_models(X_train, X_test, y_train, y_test):
     models = {
         'Random Forest': Pipeline([
             ('preprocessor', preprocessor),
-            ('scaler', StandardScaler(with_mean=False)),
-            ('regressor', RandomForestRegressor(n_estimators=100, random_state=42))
+            ('regressor', RandomForestRegressor(
+                n_estimators=100,
+                max_depth=10,
+                min_samples_split=5,
+                min_samples_leaf=2,
+                random_state=42
+            ))
         ]),
         'Linear Regression': Pipeline([
             ('preprocessor', preprocessor),
-            ('scaler', StandardScaler(with_mean=False)),
             ('regressor', LinearRegression())
         ]),
         'SVR': Pipeline([
             ('preprocessor', preprocessor),
             ('scaler', StandardScaler(with_mean=False)),
-            ('regressor', SVR(kernel='rbf'))
+            ('regressor', SVR(kernel='rbf', C=1.0, epsilon=0.2))
         ])
     }
 
@@ -197,15 +194,21 @@ def build_and_evaluate_models(X_train, X_test, y_train, y_test):
         results[name] = {'RMSE': rmse, 'R2': r2, 'MAE': mae}
         predictions[name] = y_pred
 
-    return models, results, predictions, y_test
+        # Debug training performance
+        y_train_pred = model.predict(X_train)
+        train_rmse = np.sqrt(mean_squared_error(y_train, y_train_pred))
+        train_r2 = r2_score(y_train, y_train_pred)
+        results[name]['Train_RMSE'] = train_rmse
+        results[name]['Train_R2'] = train_r2
 
+    return models, results, predictions, y_test
 
 def plot_results(results, predictions, y_test):
     """Generate regression plots with reduced size"""
     st.subheader("RMSE Comparison")
     rmses = [results[model]['RMSE'] for model in results]
     models = list(results.keys())
-    fig, ax = plt.subplots(figsize=(5, 3))  # Reduced size
+    fig, ax = plt.subplots(figsize=(5, 3))
     sns.barplot(x=models, y=rmses, ax=ax, palette='Blues')
     ax.set_title('RMSE Comparison Across Models', fontsize=10)
     ax.set_ylabel('RMSE', fontsize=8)
@@ -218,7 +221,7 @@ def plot_results(results, predictions, y_test):
 
     for model_name, y_pred in predictions.items():
         st.subheader(f'Predicted vs Actual Scores ({model_name})')
-        fig, ax = plt.subplots(figsize=(5, 3))  # Reduced size
+        fig, ax = plt.subplots(figsize=(5, 3))
         ax.scatter(y_test, y_pred, alpha=0.5, s=10)
         ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--', lw=1)
         ax.set_xlabel('Actual Scores', fontsize=8)
@@ -231,7 +234,7 @@ def plot_results(results, predictions, y_test):
 
         st.subheader(f'Residual Plot ({model_name})')
         residuals = y_test - y_pred
-        fig, ax = plt.subplots(figsize=(5, 3))  # Reduced size
+        fig, ax = plt.subplots(figsize=(5, 3))
         ax.scatter(y_pred, residuals, alpha=0.5, s=10)
         ax.axhline(y=0, color='r', linestyle='--', linewidth=1)
         ax.set_xlabel('Predicted Scores', fontsize=8)
@@ -242,13 +245,11 @@ def plot_results(results, predictions, y_test):
         st.pyplot(fig, use_container_width=False)
         plt.close()
 
-
 def predict_performance(df, model):
     """Predict student performance based on user input"""
     with st.container():
         st.subheader("Student Performance Prediction")
 
-        # Create a card-like container for the form
         with st.form("prediction_form"):
             col1, col2 = st.columns(2)
 
@@ -277,9 +278,8 @@ def predict_performance(df, model):
                 with st.spinner("Predicting..."):
                     avg_pred = model.predict(input_data)[0]
                     performance = ("Excellent" if avg_pred >= 90 else "Very Good" if avg_pred >= 80 else
-                    "Good" if avg_pred >= 70 else "Satisfactory" if avg_pred >= 60 else "Needs Improvement")
+                                   "Good" if avg_pred >= 70 else "Satisfactory" if avg_pred >= 60 else "Needs Improvement")
 
-                    # Display results in a card
                     st.markdown(f"""
                     <div class="card">
                         <h4 style="color: #4CAF50; margin-bottom: 10px;">Prediction Results</h4>
@@ -287,7 +287,6 @@ def predict_performance(df, model):
                         <p><strong>Overall Performance:</strong> {performance}</p>
                     </div>
                     """, unsafe_allow_html=True)
-
 
 def analyze_factors(df):
     """Analyze and visualize factors affecting student performance"""
@@ -312,7 +311,6 @@ def analyze_factors(df):
         default=["Bar Graph: Average Scores by Gender"]
     )
 
-    # Handle "Show All Visualizations"
     if "Show All Visualizations" in selected:
         selected = [key for key in visualizations.keys() if
                     key not in ["Show All Visualizations", "Performance Insights"]]
@@ -321,7 +319,7 @@ def analyze_factors(df):
         with st.container():
             if choice == "Bar Graph: Average Scores by Gender":
                 st.subheader(choice)
-                fig, ax = plt.subplots(figsize=(5, 3))  # Reduced size
+                fig, ax = plt.subplots(figsize=(5, 3))
                 sns.barplot(x='gender', y='average_score', data=df, errorbar=None, ax=ax, palette='Blues')
                 ax.set_title('Average Scores by Gender', fontsize=10)
                 ax.set_xlabel('Gender', fontsize=8)
@@ -333,7 +331,7 @@ def analyze_factors(df):
 
             elif choice == "Bar Graph: Average Scores by Ethnicity":
                 st.subheader(choice)
-                fig, ax = plt.subplots(figsize=(5, 3))  # Reduced size
+                fig, ax = plt.subplots(figsize=(5, 3))
                 sns.barplot(x='ethnicity', y='average_score', data=df, errorbar=None, ax=ax, palette='Blues')
                 ax.set_title('Average Scores by Ethnicity', fontsize=10)
                 ax.set_xlabel('Ethnicity', fontsize=8)
@@ -345,7 +343,7 @@ def analyze_factors(df):
 
             elif choice == "Bar Graph: Average Scores by Parental Education":
                 st.subheader(choice)
-                fig, ax = plt.subplots(figsize=(5, 3))  # Reduced size
+                fig, ax = plt.subplots(figsize=(5, 3))
                 sns.barplot(x='parental_education', y='average_score', data=df, errorbar=None, ax=ax, palette='Blues')
                 ax.set_title('Average Scores by Parental Education', fontsize=10)
                 ax.set_xlabel('Parental Education', fontsize=8)
@@ -358,7 +356,7 @@ def analyze_factors(df):
 
             elif choice == "Bar Graph: Average Scores by Lunch Type":
                 st.subheader(choice)
-                fig, ax = plt.subplots(figsize=(5, 3))  # Reduced size
+                fig, ax = plt.subplots(figsize=(5, 3))
                 sns.barplot(x='lunch', y='average_score', data=df, errorbar=None, ax=ax, palette='Blues')
                 ax.set_title('Average Scores by Lunch Type', fontsize=10)
                 ax.set_xlabel('Lunch Type', fontsize=8)
@@ -370,7 +368,7 @@ def analyze_factors(df):
 
             elif choice == "Bar Graph: Average Scores by Test Preparation":
                 st.subheader(choice)
-                fig, ax = plt.subplots(figsize=(5, 3))  # Reduced size
+                fig, ax = plt.subplots(figsize=(5, 3))
                 sns.barplot(x='test_prep', y='average_score', data=df, errorbar=None, ax=ax, palette='Blues')
                 ax.set_title('Average Scores by Test Preparation', fontsize=10)
                 ax.set_xlabel('Test Preparation', fontsize=8)
@@ -382,7 +380,7 @@ def analyze_factors(df):
 
             elif choice == "Line Graph: Subject Performance Over Average Scores":
                 st.subheader(choice)
-                fig, ax = plt.subplots(figsize=(5, 3))  # Reduced size
+                fig, ax = plt.subplots(figsize=(5, 3))
                 subjects = ['math_score', 'reading_score', 'writing_score']
                 subject_names = ['Math', 'Reading', 'Writing']
                 for subject, name in zip(subjects, subject_names):
@@ -399,7 +397,7 @@ def analyze_factors(df):
             elif choice == "Pie Chart: Pass Rate by Test Preparation":
                 st.subheader(choice)
                 pass_rate = df.groupby('test_prep')['average_score'].apply(lambda x: (x >= 60).mean()) * 100
-                fig, ax = plt.subplots(figsize=(5, 3))  # Reduced size
+                fig, ax = plt.subplots(figsize=(5, 3))
                 ax.pie(pass_rate, labels=pass_rate.index, autopct='%1.1f%%', startangle=90,
                        colors=sns.color_palette('Blues'), textprops={'fontsize': 8})
                 ax.set_title('Pass Rate by Test Preparation', fontsize=10)
@@ -408,7 +406,7 @@ def analyze_factors(df):
 
             elif choice == "Histogram: Distribution of Average Scores":
                 st.subheader(choice)
-                fig, ax = plt.subplots(figsize=(5, 3))  # Reduced size
+                fig, ax = plt.subplots(figsize=(5, 3))
                 sns.histplot(df['average_score'], bins=12, kde=True, ax=ax, color='skyblue', linewidth=0.5)
                 ax.set_title('Distribution of Average Scores', fontsize=10)
                 ax.set_xlabel('Average Score', fontsize=8)
@@ -502,12 +500,10 @@ def analyze_factors(df):
                 </div>
                 """, unsafe_allow_html=True)
 
-
 def home_page():
     """Home page content"""
     st.header("Welcome to Student Performance Analysis")
 
-    # Hero section
     st.markdown("""
     <div class="card">
         <h3 style="color: #4CAF50;">Analyze, Predict, and Improve Student Performance</h3>
@@ -516,7 +512,6 @@ def home_page():
     </div>
     """, unsafe_allow_html=True)
 
-    # Features overview
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -543,7 +538,6 @@ def home_page():
         </div>
         """, unsafe_allow_html=True)
 
-    # Quick start guide
     st.markdown("""
     <div class="card">
         <h4 style="color: #4CAF50;">🚀 Quick Start</h4>
@@ -556,12 +550,10 @@ def home_page():
     </div>
     """, unsafe_allow_html=True)
 
-
 def main():
     """Main function to run the Streamlit app"""
     st.title("📊 Student Performance Analysis")
 
-    # Use tabs for main navigation
     tab1, tab2, tab3, tab4 = st.tabs(["🏠 Home", "📈 Model Evaluation", "🔮 Prediction", "📊 Analysis"])
 
     X_train, X_test, y_train, y_test, df = load_and_preprocess_data()
@@ -580,7 +572,6 @@ def main():
     with tab2:
         st.header("Model Evaluation")
 
-        # Model metrics in cards
         st.subheader("Performance Metrics")
         cols = st.columns(3)
         for i, (name, metrics) in enumerate(results.items()):
@@ -588,9 +579,11 @@ def main():
                 st.markdown(f"""
                 <div class="card">
                     <h4 style="color: #4CAF50;">{name}</h4>
-                    <p><strong>RMSE:</strong> {metrics['RMSE']:.2f}</p>
-                    <p><strong>R² Score:</strong> {metrics['R2']:.2f}</p>
-                    <p><strong>MAE:</strong> {metrics['MAE']:.2f}</p>
+                    <p><strong>Train RMSE:</strong> {metrics['Train_RMSE']:.2f}</p>
+                    <p><strong>Train R²:</strong> {metrics['Train_R2']:.2f}</p>
+                    <p><strong>Test RMSE:</strong> {metrics['RMSE']:.2f}</p>
+                    <p><strong>Test R²:</strong> {metrics['R2']:.2f}</p>
+                    <p><strong>Test MAE:</strong> {metrics['MAE']:.2f}</p>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -602,7 +595,6 @@ def main():
 
     with tab4:
         analyze_factors(df)
-
 
 if __name__ == "__main__":
     main()
